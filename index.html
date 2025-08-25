@@ -1,141 +1,464 @@
+# ラーメン鳳凰 — 公式サイト（PWA対応）
+
+> **このドキュメントには完成済みのコードを収録**しています。下の順番で3ファイルを作成してください。
+>
+> 1. `index.html`
+> 2. `manifest.json`
+> 3. `sw.js`
+>
+> 画像は `images/` フォルダに置き、パスを差し替えてください（例のままでもOK）。
+
+---
+
+## 1) `index.html`
+
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ラーメン鳳凰 | Ramen HOUOU</title>
-  <meta name="description" content="透き通る清湯と自家製ちぢれ麺。大阪・中央区のラーメン鳳凰。" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css" />
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="ラーメン鳳凰">
-  <meta property="og:description" content="透き通る清湯と自家製ちぢれ麺。大阪・中央区のラーメン鳳凰。">
-  <meta property="og:image" content="./assets/img/hero.jpg">
-  <meta name="theme-color" content="#d83a3a">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ラーメン鳳凰 | 濃厚鶏白湯専門店</title>
+  <meta name="description" content="濃厚で上品な鶏白湯。大阪・中央区のラーメン鳳凰。" />
+
+  <!-- iOSフルスクリーン/PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="ラーメン鳳凰" />
+  <link rel="apple-touch-icon" href="images/icon-192.png" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Favicon（任意差し替え） -->
+  <link rel="icon" href="images/icon-192.png" />
+
+  <style>
+    :root{
+      --bg:#ffffff;        /* 白基調 */
+      --ink:#111827;       /* 黒に近い文字色 */
+      --muted:#6b7280;     /* サブテキスト */
+      --card:#ffffff;      /* カード背景 */
+      --line:#e5e7eb;      /* 線 */
+      --accent:#ef4444;    /* 赤（バッジ等） */
+      --accent-soft:#fdece9; /* 薄い赤 */
+      --radius:18px;
+      --shadow:0 10px 24px rgba(17,24,39,.08);
+      --maxw:1120px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0; padding:0; background:var(--bg); color:var(--ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;}
+
+    /* ヘッダー */
+    header{
+      position:sticky; top:0; z-index:50; backdrop-filter: blur(8px);
+      background:rgba(255,255,255,.75); border-bottom:1px solid var(--line);
+    }
+    .wrap{max-width:var(--maxw); margin:0 auto; padding:0 20px}
+    .row{display:flex; align-items:center; justify-content:space-between; gap:16px}
+    .brand{display:flex; align-items:center; gap:12px; padding:14px 0}
+    .brand img{height:28px; width:auto}
+    .brand .title{font-weight:800; letter-spacing:.04em}
+    nav a{color:var(--ink); text-decoration:none; font-weight:700; padding:10px 12px; border-radius:12px}
+    nav a:hover{background:#f3f4f6}
+
+    /* ヒーロー */
+    .hero{
+      position:relative; overflow:hidden; border-bottom:1px solid var(--line);
+      background:#f8fafc;
+    }
+    .hero-inner{display:grid; grid-template-columns:1.3fr 1fr; gap:24px; padding:48px 20px; max-width:var(--maxw); margin:0 auto;}
+    .hero h1{font-size:clamp(28px,3vw,42px); margin:0 0 12px; font-weight:900}
+    .hero p{color:var(--muted); margin:0 0 20px}
+    .hero .cta{display:flex; gap:12px; flex-wrap:wrap}
+    .btn{appearance:none; border:none; cursor:pointer; font-weight:800; border-radius:16px; padding:14px 18px}
+    .btn-primary{background:#111827; color:#fff}
+    .btn-outline{background:#fff; border:1px solid var(--line);}
+    .hero-img{width:100%; border-radius:20px; box-shadow:var(--shadow); aspect-ratio:16/9; object-fit:cover}
+
+    /* セクション */
+    section{padding:56px 20px}
+    section .head{max-width:var(--maxw); margin:0 auto 20px; display:flex; align-items:end; justify-content:space-between; gap:16px}
+    section .head h2{margin:0; font-size:clamp(22px,2.4vw,32px)}
+    .sub{color:var(--muted)}
+
+    /* カードグリッド */
+    .grid{max-width:var(--maxw); margin:0 auto; display:grid; gap:16px; grid-template-columns:repeat(12,1fr)}
+    .col-4{grid-column:span 4}
+    @media (max-width:960px){ .col-4{grid-column:span 6} .hero-inner{grid-template-columns:1fr;}}
+    @media (max-width:640px){ .col-4{grid-column:span 12}}
+
+    .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden}
+    .card .pic{aspect-ratio:1/1; width:100%; object-fit:cover; display:block}
+    .card .body{padding:14px 16px}
+    .card h3{margin:0 0 6px; font-size:18px}
+    .price{font-weight:900;}
+    .desc{color:var(--muted); font-size:14px; line-height:1.6}
+
+    /* バッジ */
+    .badges{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 8px}
+    .badge{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800;}
+    .badge.hot{background:var(--accent); color:#fff}
+    .badge.pick{background:var(--accent-soft); color:#b91c1c; border:1px solid #f7c4be}
+
+    /* 季節限定 */
+    .seasonal{background:#f9fafb; border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+    .season-tag{font-weight:900; letter-spacing:.06em; background:#111827; color:#fff; display:inline-block; padding:6px 10px; border-radius:10px}
+
+    /* 口コミ */
+    .review{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow)}
+    .stars{color:#f59e0b; font-size:18px; letter-spacing:2px}
+    .review .meta{color:var(--muted); font-size:13px}
+
+    /* フッター */
+    footer{border-top:1px solid var(--line); background:#fff}
+    .foot-grid{max-width:var(--maxw); margin:0 auto; display:grid; gap:20px; grid-template-columns:2fr 1fr 1fr; padding:32px 20px}
+    .sns a{display:inline-flex; align-items:center; gap:8px; color:var(--ink); text-decoration:none; font-weight:800; border:1px solid var(--line); padding:10px 14px; border-radius:12px; margin-right:10px}
+    .copy{border-top:1px solid var(--line); padding:14px 20px; text-align:center; color:var(--muted)}
+    @media (max-width:800px){ .foot-grid{grid-template-columns:1fr} }
+
+    /* 地図埋め込みの枠 */
+    .map-wrap{border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:var(--shadow)}
+    .map-wrap iframe{width:100%; height:360px; display:block}
+  </style>
 </head>
-<body data-page="index">
-  <header class="site-header">
-    <div class="container nav-wrap">
-      <a class="brand" href="index.html">ラーメン鳳凰</a>
-      <button class="nav-toggle" aria-label="メニュー" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
-      <nav class="nav">
-        <a href="index.html" data-nav>ホーム</a>
-        <a href="menu.html" data-nav>メニュー</a>
-        <a href="shop.html" data-nav>店舗案内</a>
-        <a href="news.html" data-nav>お知らせ</a>
-        <a class="btn btn-primary" href="#" target="_blank" rel="noopener">予約する</a>
+<body>
+  <!-- ヘッダー -->
+  <header>
+    <div class="wrap row">
+      <div class="brand">
+        <!-- ロゴ（横長）-->
+        <img src="images/logo-horizontal.png" alt="ラーメン鳳凰 ロゴ" />
+        <div class="title">ラーメン鳳凰</div>
+      </div>
+      <nav>
+        <a href="#menu">メニュー</a>
+        <a href="#about">店舗情報</a>
+        <a href="#reviews">口コミ</a>
       </nav>
     </div>
   </header>
 
-  <main>
-    <section class="hero" style="--hero:url('./assets/img/hero.jpg');">
-      <div class="container hero-inner">
-        <h1 class="display">澄んだ一杯、<br class="sp">まっすぐ。</h1>
-        <p>鶏と香味野菜を丁寧に引き出した清湯スープ。自家製ちぢれ麺が絡む、余韻のある旨み。</p>
+  <!-- ヒーロー（店舗画像：横長正方形） -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div>
+        <h1>濃厚 × 上品。<br>鶏白湯の到達点。</h1>
+        <p>鶏の旨味を極限まで引き出したクリーミーなスープ。口の中でほどけるチャーシュー、こだわり味玉。白を基調にした、今っぽいモダンな空間でお楽しみください。</p>
         <div class="cta">
-          <a class="btn btn-primary" href="#" target="_blank" rel="noopener">予約する</a>
-          <a class="btn btn-ghost" href="menu.html">メニューを見る</a>
+          <a class="btn btn-primary" href="#menu">メニューを見る</a>
+          <a class="btn btn-outline" href="#about">店舗情報</a>
         </div>
       </div>
-    </section>
-
-    <section class="section" id="features">
-      <div class="container">
-        <h2 class="section-title">鳳凰のこだわり</h2>
-        <div class="grid cards reveal-group">
-          <article class="card reveal">
-            <img src="./assets/img/broth.jpg" alt="澄んだスープ" loading="lazy">
-            <div class="card-body">
-              <h3>清湯スープ</h3>
-              <p>丸鶏と香味野菜を低温で抽出。透明感とコクを両立しました。</p>
-            </div>
-          </article>
-          <article class="card reveal">
-            <img src="./assets/img/noodles.jpg" alt="自家製の麺" loading="lazy">
-            <div class="card-body">
-              <h3>自家製ちぢれ麺</h3>
-              <p>国産小麦を独自ブレンド。スープを持ち上げるもっちり食感。</p>
-            </div>
-          </article>
-          <article class="card reveal">
-            <img src="./assets/img/chashu.jpg" alt="チャーシュー" loading="lazy">
-            <div class="card-body">
-              <h3>二種のチャーシュー</h3>
-              <p>炭火の香りをまとわせた豚肩ロースと、しっとり鶏むね。</p>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section-alt">
-      <div class="container">
-        <h2 class="section-title">おすすめ</h2>
-        <div class="grid menu-picks reveal-group">
-          <div class="menu-card reveal">
-            <img src="./assets/img/ramen1.jpg" alt="特製醤油ラーメン" loading="lazy">
-            <div>
-              <h3>特製醤油ラーメン</h3>
-              <p class="price">¥1,100</p>
-            </div>
-          </div>
-          <div class="menu-card reveal">
-            <img src="./assets/img/ramen2.jpg" alt="味噌ラーメン" loading="lazy">
-            <div>
-              <h3>味噌ラーメン</h3>
-              <p class="price">¥980</p>
-            </div>
-          </div>
-          <div class="menu-card reveal">
-            <img src="./assets/img/gyoza.jpg" alt="手包み餃子" loading="lazy">
-            <div>
-              <h3>手包み餃子</h3>
-              <p class="price">¥420</p>
-            </div>
-          </div>
-        </div>
-        <p class="center mt-24"><a class="btn" href="menu.html">フルメニューを見る</a></p>
-      </div>
-    </section>
-
-    <section class="section" id="access">
-      <div class="container two-col">
-        <div>
-          <h2 class="section-title">アクセス</h2>
-          <ul class="info">
-            <li><strong>住所：</strong> 大阪市中央区○○1-2-3（架空）</li>
-            <li><strong>営業時間：</strong> 11:00–15:00 / 17:00–21:00</li>
-            <li><strong>定休日：</strong> 火曜日</li>
-            <li><strong>電話：</strong> <a href="tel:0000000000">00-0000-0000</a></li>
-          </ul>
-          <div class="cta">
-            <a class="btn btn-primary" href="#" target="_blank" rel="noopener">予約する</a>
-            <a class="btn" href="shop.html">店舗情報</a>
-          </div>
-        </div>
-        <div class="map-wrap reveal">
-          <iframe title="Google Map" loading="lazy" src="https://www.google.com/maps?q=%E5%A4%A7%E9%98%AA%E5%B8%82%E4%B8%AD%E5%A4%AE%E5%8C%BA&output=embed" referrerpolicy="no-referrer-when-downgrade"></iframe>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="container foot">
-      <small>© <span id="y"></span> Ramen HOUOU</small>
-      <nav class="foot-nav">
-        <a href="news.html">お知らせ</a>
-        <a href="shop.html">店舗案内</a>
-        <a href="menu.html">メニュー</a>
-      </nav>
+      <img class="hero-img" src="images/store-hero.jpg" alt="店舗写真（ラーメン鳳凰）" />
     </div>
+  </section>
+
+  <!-- メニュー -->
+  <section id="menu">
+    <div class="head wrap">
+      <h2>メニュー</h2>
+      <div class="sub">人気・おすすめのバッジを表示。写真は正方形推奨。</div>
+    </div>
+    <div class="grid">
+      <!-- 濃厚鶏白湯ラーメン：人気No.1 -->
+      <article class="card col-4">
+        <img class="pic" src="images/ramen-rich.jpg" alt="濃厚鶏白湯ラーメン" />
+        <div class="body">
+          <div class="badges">
+            <span class="badge hot">人気No.1</span>
+            <span class="badge pick">おすすめ</span>
+          </div>
+          <h3>濃厚鶏白湯ラーメン</h3>
+          <div class="desc">鶏の旨味を凝縮したクリーミーで濃厚なスープ。とろけるチャーシューと特製味玉が絶妙。</div>
+        </div>
+      </article>
+
+      <!-- 鶏白湯ラーメン・塩 -->
+      <article class="card col-4">
+        <img class="pic" src="images/ramen-salt.jpg" alt="鶏白湯ラーメン・塩" />
+        <div class="body">
+          <div class="badges">
+            <span class="badge pick">おすすめ</span>
+          </div>
+          <h3>鶏白湯ラーメン・塩</h3>
+          <div class="desc">すっきり上品な塩味の中に鶏の旨味をしっかり感じる一杯。</div>
+        </div>
+      </article>
+
+      <!-- 濃厚鶏白湯ラーメン・辛 -->
+      <article class="card col-4">
+        <img class="pic" src="images/ramen-spicy.jpg" alt="濃厚鶏白湯ラーメン・辛" />
+        <div class="body">
+          <div class="badges">
+            <span class="badge hot">辛党に人気</span>
+          </div>
+          <h3>濃厚鶏白湯ラーメン・辛</h3>
+          <div class="desc">濃厚スープに特製の辛味をプラス。やみつきになる刺激。</div>
+        </div>
+      </article>
+
+      <!-- サイド：餃子 -->
+      <article class="card col-4">
+        <img class="pic" src="images/gyoza.jpg" alt="自家製焼き餃子" />
+        <div class="body">
+          <h3>自家製焼き餃子</h3>
+          <div class="desc">パリパリの皮とジューシーな餡。ラーメンと相性抜群。</div>
+        </div>
+      </article>
+
+      <!-- 唐揚げ -->
+      <article class="card col-4">
+        <img class="pic" src="images/karaage.jpg" alt="特製鶏の唐揚げ" />
+        <div class="body">
+          <h3>特製鶏の唐揚げ</h3>
+          <div class="desc">外はカリッと中はジューシー。特製ダレに漬け込んだこだわりの一品。</div>
+        </div>
+      </article>
+
+      <!-- チャーハン -->
+      <article class="card col-4">
+        <img class="pic" src="images/fried-rice.jpg" alt="絶品チャーハン" />
+        <div class="body">
+          <h3>絶品チャーハン</h3>
+          <div class="desc">高温で一気に炒めてパラパラ食感に。王道の旨さ。</div>
+        </div>
+      </article>
+
+      <!-- TKG -->
+      <article class="card col-4">
+        <img class="pic" src="images/tamago-kake-gohan.jpg" alt="こだわり卵の卵かけご飯" />
+        <div class="body">
+          <h3>こだわり卵の卵かけご飯</h3>
+          <div class="desc">新鮮で濃厚な卵を使用。シンプルながら奥深い味わい。</div>
+        </div>
+      </article>
+
+      <!-- 生ビール -->
+      <article class="card col-4">
+        <img class="pic" src="images/beer.jpg" alt="生ビール" />
+        <div class="body">
+          <h3>生ビール</h3>
+          <div class="desc">キンキンに冷えた一杯をどうぞ。餃子・唐揚げとも相性抜群。</div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 季節限定 -->
+  <section class="seasonal">
+    <div class="head wrap">
+      <div>
+        <div class="season-tag">季節限定</div>
+        <h2>いまだけの一杯</h2>
+      </div>
+      <div class="sub">季節メニューは簡単に差し替え可能。写真は正方形で。</div>
+    </div>
+    <div class="grid">
+      <article class="card col-4">
+        <img class="pic" src="images/ramen-cold.jpg" alt="冷やし鶏白湯" />
+        <div class="body">
+          <div class="badges"><span class="badge pick">夏限定</span></div>
+          <h3>冷やし鶏白湯</h3>
+          <div class="desc">鶏白湯をひんやり上品に。暑い日でもスルッといける清涼感。</div>
+        </div>
+      </article>
+      <article class="card col-4">
+        <img class="pic" src="images/ramen-yuzu.jpg" alt="柚子塩" />
+        <div class="body">
+          <div class="badges"><span class="badge pick">数量限定</span></div>
+          <h3>柚子塩</h3>
+          <div class="desc">爽やかな柚子香る塩だれが、鶏の旨味を上品に引き立てる。</div>
+        </div>
+      </article>
+      <!-- 追加しやすいように空枠（必要なければ削除可） -->
+      <article class="card col-4">
+        <img class="pic" src="images/placeholder.jpg" alt="季節限定（追加予定）" />
+        <div class="body">
+          <h3>季節限定（追加予定）</h3>
+          <div class="desc">新メニューが入り次第、写真と説明を差し替えてください。</div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 口コミ（Googleレビュー連動想定のダミー） -->
+  <section id="reviews">
+    <div class="head wrap">
+      <h2>口コミ</h2>
+      <div class="sub">Googleレビューのダミー表示。実運用ではAPIやウィジェット連携に差し替え。</div>
+    </div>
+    <div class="grid">
+      <div class="review col-4">
+        <div class="stars">★★★★★</div>
+        <p>スープがクリーミーで感動。チャーシューもとろける旨さ。人気No.1の看板に偽りなし！</p>
+        <div class="meta">— ユーザーA / 3日前</div>
+      </div>
+      <div class="review col-4">
+        <div class="stars">★★★★☆</div>
+        <p>塩のバランスがいい。見た目も美しくて上品。再訪決定です。</p>
+        <div class="meta">— ユーザーB / 1週間前</div>
+      </div>
+      <div class="review col-4">
+        <div class="stars">★★★★★</div>
+        <p>辛鶏白湯が程よい辛さでクセになる。餃子とビールのセットが最高でした。</p>
+        <div class="meta">— ユーザーC / 2週間前</div>
+      </div>
+    </div>
+    <div class="wrap" style="margin-top:16px">
+      <a class="btn btn-outline" href="https://www.google.com/maps/search/?api=1&query=%E3%83%A9%E3%83%BC%E3%83%A1%E3%83%B3%E9%B3%B3%E9%B3%B4" target="_blank" rel="noopener">Googleで見る</a>
+    </div>
+  </section>
+
+  <!-- 店舗情報 / アクセス -->
+  <section id="about">
+    <div class="head wrap">
+      <h2>店舗情報</h2>
+      <div class="sub">営業時間・お支払い・地図</div>
+    </div>
+    <div class="grid wrap" style="grid-template-columns:1.2fr .8fr; gap:24px">
+      <div class="map-wrap">
+        <!-- Googleマップ埋め込み（住所確定後に差し替え） -->
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3277.9999!2d135.0!3d34.6!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2z44Kz44Oz44OJ44Kk6bKG!5e0!3m2!1sja!2sjp!4v0000000000000"
+          loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen></iframe>
+      </div>
+      <div>
+        <div class="card" style="padding:16px">
+          <h3 style="margin:0 0 8px">基本情報</h3>
+          <p class="desc" style="margin:6px 0">住所：大阪市中央区◯◯◯◯<br>アクセス：最寄駅から徒歩◯分</p>
+          <p class="desc" style="margin:6px 0">営業時間：11:00–22:00（L.O. 21:30）<br>定休日：水曜日</p>
+          <hr style="border:none; border-top:1px solid var(--line); margin:14px 0" />
+          <h4 style="margin:0 0 8px">お支払い</h4>
+          <p class="desc" style="margin:6px 0">現金 / クレジットカード / QRコード決済</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- フッター：SNSリンク（ダミーでトップへ） -->
+  <footer>
+    <div class="foot-grid">
+      <div>
+        <strong>ラーメン鳳凰</strong>
+        <p class="desc">濃厚かつ上品な鶏白湯スープを、白基調のスタイリッシュな空間で。</p>
+      </div>
+      <div>
+        <strong>SNS</strong>
+        <p class="desc">※ダミーリンク（各サービスのトップへ遷移します）</p>
+        <div class="sns">
+          <a href="https://www.instagram.com/" target="_blank" rel="noopener" aria-label="Instagram">Instagram</a>
+          <a href="https://x.com/" target="_blank" rel="noopener" aria-label="X (旧Twitter)">X</a>
+        </div>
+      </div>
+      <div>
+        <strong>お問い合わせ</strong>
+        <p class="desc">ご予約・お問い合わせは店頭またはお電話で承ります。</p>
+      </div>
+    </div>
+    <div class="copy">© <span id="y"></span> ラーメン鳳凰</div>
   </footer>
 
-  <script src="./assets/js/main.js"></script>
+  <script>
+    // 年号
+    document.getElementById('y').textContent = new Date().getFullYear();
+
+    // PWA: Service Worker登録
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(console.error);
+      });
+    }
+  </script>
 </body>
 </html>
+```
+
+---
+
+## 2) `manifest.json`
+
+```json
+{
+  "name": "ラーメン鳳凰",
+  "short_name": "鳳凰",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111827",
+  "icons": [
+    { "src": "images/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "images/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+```
+
+---
+
+## 3) `sw.js`
+
+```js
+// シンプルなオフラインキャッシュ
+const CACHE_NAME = 'houou-v1';
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  // 画像は必要に応じて追記
+  // './images/logo-horizontal.png',
+  // './images/store-hero.jpg',
+];
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(caches.keys().then(keys => Promise.all(
+    keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+  )));
+});
+
+self.addEventListener('fetch', (e) => {
+  e.respondWith(
+    caches.match(e.request).then((res) => res || fetch(e.request))
+  );
+});
+```
+
+---
+
+## 配置ガイド
+
+* 画像フォルダ：`/images`
+
+  * `logo-horizontal.png`（横長ロゴ）
+  * `store-hero.jpg`（ヒーロー画像：横長正方形/16:9推奨）
+  * 商品画像（正方形）：
+
+    * `ramen-rich.jpg`
+    * `ramen-salt.jpg`
+    * `ramen-spicy.jpg`
+    * `gyoza.jpg`
+    * `karaage.jpg`
+    * `fried-rice.jpg`
+    * `tamago-kake-gohan.jpg`
+    * `beer.jpg`
+  * 季節限定：`ramen-cold.jpg`, `ramen-yuzu.jpg`, `placeholder.jpg`
+  * PWAアイコン：`icon-192.png`, `icon-512.png`
+
+## GitHub Pages 公開メモ
+
+1. リポジトリを公開（Public）にする
+2. `main` ブランチの `/` 直下に3ファイル（+ images/）を置く
+3. Settings → Pages → Branch: `main / root` → Save
+4. 反映後、iPhoneで「ホーム画面に追加」をすると **フルスクリーン＆PWA** で起動
+
+## 運用ヒント（拡張）
+
+* 口コミ：実運用は Googleマップの埋め込みウィジェットや外部レビューAPIに差し替え
+* 季節限定：`<article>` 追加/削除のみで簡単に入れ替え
+* 価格表示：`<div class="price">¥1,000</div>` のように追記可能
+* アナリティクス：`gtag.js` を `<head>` に追加
+* メニューの並び替え：HTMLブロックの順序を入れ替えるだけ
